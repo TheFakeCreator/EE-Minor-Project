@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://www.nitrr.ac.in/images/nitrr_new_logo_new.png" alt="NIT Raipur Logo" width="150" />
+  <img src="public/nitrr_new_logo_new.png" alt="NIT Raipur Logo" width="150" />
 </div>
 
 # ⚡ Grid Stability Prediction using Machine Learning
