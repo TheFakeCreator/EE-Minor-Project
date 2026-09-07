@@ -1,0 +1,17 @@
+{
+    "timestamp": 1788789057.444326,
+    "seed": 42,
+    "scenarios_attempted": 450,
+    "scenarios_successful": 450,
+    "total_time_seconds": 294.11575198173523,
+    "features_extracted": [
+        "scenario_id",
+        "load_scale",
+        "contingency",
+        "fault_bus",
+        "clearing_time",
+        "v_min_system",
+        "v_mean_system",
+        "is_stable"
+    ]
+}

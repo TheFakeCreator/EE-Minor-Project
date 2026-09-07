@@ -1,0 +1,46 @@
+# Grid Stability Prediction: Scenario Generation Configuration
+# This file defines the bounds and parameters for simulating datasets.
+
+# Global settings
+random_seed: 42
+test_system: "ieee39/ieee39_full.xlsx"
+
+# Operating Conditions
+operating_conditions:
+  # Scale loads and generator dispatch uniformly to cover a range of system stress
+  load_scaling_min: 0.8  # 80% of nominal
+  load_scaling_max: 1.2  # 120% of nominal
+  num_load_levels: 5     # e.g. 0.8, 0.9, 1.0, 1.1, 1.2
+  
+# Disturbance (Fault) Parameters
+faults:
+  type: "three_phase"
+  # Target buses for faults. We will pick a mix of generator and load buses.
+  # IEEE 39-bus generator buses: 30-39. Load/transit buses: 1-29.
+  # Selecting a representative set to allow for generalization experiments.
+  fault_buses: [2, 16, 26, 29, 39]
+  
+  # Fault clearing times.
+  # If a fault is cleared quickly, system is usually stable. If slow, unstable.
+  clearing_time_min: 0.05  # seconds
+  clearing_time_max: 0.30  # seconds
+  clearing_time_step: 0.05 # seconds
+  
+# Contingencies
+contingencies:
+  # N-1 Line outages to apply before initiating the fault.
+  # 'Line_x_y' denotes outage of the line connecting bus x and bus y.
+  # We select a few critical transmission lines for N-1 scenarios.
+  # None represents the N-0 (intact) case.
+  lines_out:
+    - "None"
+    - "Line_2_3"
+    - "Line_16_17"
+
+# Labeling Rule
+labeling:
+  # Criterion for binary stability classification
+  metric: "max_relative_rotor_angle"
+  # Threshold in degrees. If any generator's rotor angle deviates from the 
+  # Center of Inertia (COI) by more than this threshold, it's labeled Unstable (0).
+  threshold_degrees: 180.0

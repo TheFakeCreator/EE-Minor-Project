@@ -1,0 +1,9 @@
+andes>=1.8.0
+jupyter
+matplotlib
+pandas
+scikit-learn
+xgboost
+shap
+streamlit
+pyyaml
