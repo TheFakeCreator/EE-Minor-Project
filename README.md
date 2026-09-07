@@ -1,3 +1,7 @@
+<div align="center">
+  <img src="https://www.nitrr.ac.in/images/nitrr_new_logo_new.png" alt="NIT Raipur Logo" width="150" />
+</div>
+
 # ⚡ Grid Stability Prediction using Machine Learning
 
 [![Python](https://img.shields.io/badge/Python-3.11%2B-blue.svg)](https://www.python.org/)
