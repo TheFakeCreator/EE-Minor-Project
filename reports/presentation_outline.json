@@ -1,0 +1,411 @@
+{
+  "title": "Grid Stability Prediction & CCT Estimation",
+  "subtitle": "Physics-Guided Machine Learning on IEEE 39-Bus New England System",
+  "deck_style": {
+    "style_preset": "data-heavy-boardroom",
+    "composition_grammar": "consulting-answer-pyramid",
+    "style_seed": "nit-raipur-ee-minor",
+    "palette_key": "corporate_slate_v1",
+    "font_pair": "system_clean_v1",
+    "visual_density": "medium",
+    "emoji_mode": "none",
+    "footer_mode": "source-line",
+    "footer_page_numbers": true,
+    "footer_source_label": "NIT Raipur • EE Minor Project (7th Sem)",
+    "readability_contract": {
+      "min_title_pt": 26,
+      "min_body_pt": 15,
+      "min_support_pt": 12,
+      "min_caption_pt": 9,
+      "min_footer_pt": 9,
+      "min_metadata_pt": 9,
+      "max_title_lines": 2
+    }
+  },
+  "metadata": {
+    "project": "Electrical Engineering Minor Project",
+    "institution": "National Institute of Technology (NIT) Raipur",
+    "team": "Sanskar Gupta (23117091), Daksh Tripathi (23117036), Karandeep Taram (23117052), Veena Gupta (23117112)",
+    "supervision": "Department of Electrical Engineering, NIT Raipur"
+  },
+  "slides": [
+    {
+      "slide_id": "slide-01",
+      "type": "title",
+      "role": "title",
+      "variant": "title",
+      "slide_intent": "title",
+      "title": "Grid Stability Prediction & CCT Estimation",
+      "subtitle": "Physics-Guided Machine Learning on IEEE 39-Bus New England System\nNIT Raipur • EE Minor Project (7th Semester) • Academic Year 2026",
+      "kicker": "NATIONAL INSTITUTE OF TECHNOLOGY RAIPUR • ELECTRICAL ENGINEERING",
+      "sources": ["Sanskar Gupta • Daksh Tripathi • Karandeep Taram • Veena Gupta"]
+    },
+    {
+      "slide_id": "slide-02",
+      "type": "content",
+      "role": "comparison",
+      "variant": "comparison-2col",
+      "slide_intent": "problem",
+      "title": "The Computational Bottleneck in Dynamic Security",
+      "subtitle": "Why conventional Time-Domain Simulation fails to meet real-time grid operation demands",
+      "left": {
+        "title": "Conventional Simulation (TDS)",
+        "bullets": [
+          "Solves non-linear DAEs via numerical integration.",
+          "Requires 20–30s per scenario on IEEE 39-bus network.",
+          "Intractable for real-time dynamic security assessment."
+        ]
+      },
+      "right": {
+        "title": "Physics-Guided Machine Learning",
+        "bullets": [
+          "Predicts post-fault rotor stability and CCT directly.",
+          "Sub-millisecond inference (<1 ms) for EMS/SCADA.",
+          "Incorporates Equal Area Criterion physical invariants."
+        ]
+      },
+      "sources": ["Kundur, Power System Stability (1994) • IEEE PES Benchmark Reports"]
+    },
+    {
+      "slide_id": "slide-03",
+      "type": "content",
+      "role": "table",
+      "variant": "table",
+      "role_layout_variant": "dense",
+      "slide_intent": "method",
+      "title": "Modular Physics-to-ML Pipeline Architecture",
+      "subtitle": "Zero-license, 100% open-source software stack from numerical simulation to operator dashboard",
+      "table": {
+        "headers": ["Pipeline Stage", "Method & Tooling", "Engineering Function"],
+        "rows": [
+          ["1. Dynamic Simulation", "ANDES (Python DAE solver)", "450 dynamic disturbance runs on IEEE 39-bus"],
+          ["2. Ground Truth Labeling", "COI 180° Deviation Rule", "Transient stability benchmark via rotor divergence"],
+          ["3. Physics Invariants", "Equal Area Criterion (EAC)", "Synthesizes impulse (1 - v_min) * t_clear"],
+          ["4. ML Models & Dashboard", "XGBoost, MLP, SHAP, Streamlit", "Classification, CCT speedup, XAI, Digital Twin"]
+        ],
+        "column_weights": [1.2, 1.4, 2.0]
+      },
+      "sources": ["Cui et al., ANDES: Python Software for Power System Simulation (IEEE TPWRS, 2021)"]
+    },
+    {
+      "slide_id": "slide-04",
+      "type": "content",
+      "role": "table",
+      "variant": "table",
+      "role_layout_variant": "dense",
+      "slide_intent": "dataset",
+      "title": "Systematic Disturbance & Contingency Space",
+      "subtitle": "Config-driven scenario generation across loading, fault buses, and line trips",
+      "table": {
+        "headers": ["Parameter", "Sample Range", "Grid Rationale"],
+        "rows": [
+          ["Operating Load Factor", "0.8 to 1.2 nominal", "Diurnal demand and transfer stress"],
+          ["Faulted Buses", "Buses 14, 16, 29, 39", "Generator, load, and tie-line buses"],
+          ["Clearing Times", "0.05s to 0.35s (3 to 21 cycles)", "Fast clearing to delayed backup"],
+          ["N-1 Contingency", "Line 16-17 trip & None", "Post-contingency dynamic security"],
+          ["Stability Labels", "308 Stable / 142 Unstable", "2.17:1 operational margin ratio"]
+        ],
+        "column_weights": [1.2, 1.3, 1.8]
+      },
+      "sources": ["IEEE 39-Bus New England 10-Generator Benchmark"]
+    },
+    {
+      "slide_id": "slide-05",
+      "type": "content",
+      "role": "evidence",
+      "variant": "scientific-figure",
+      "slide_intent": "eda",
+      "title": "Exploratory Data Analysis & Physical Sanity Validation",
+      "subtitle": "Simulation labels adhere to classical transient power-angle physics",
+      "figure_layout": "panel-grid",
+      "figures": [
+        {
+          "path": "figures/stability_vs_clearing_time.png",
+          "label": "A",
+          "title": "Stability vs Clearing Duration",
+          "caption": "Longer fault durations directly increase kinetic acceleration area and instability."
+        },
+        {
+          "path": "figures/feature_distributions.png",
+          "label": "B",
+          "title": "Operating Feature Distributions",
+          "caption": "Continuous coverage across load scales, voltage sags, and fault buses."
+        }
+      ],
+      "interpretation": "Scenarios strictly conform to physical expectations: generator terminal faults and long clearing durations precipitate rapid loss of synchronism.",
+      "sources": ["reports/figures/stability_vs_clearing_time.png • reports/figures/feature_distributions.png"]
+    },
+    {
+      "slide_id": "slide-06",
+      "type": "content",
+      "role": "table",
+      "variant": "table",
+      "role_layout_variant": "dense",
+      "slide_intent": "baselines",
+      "title": "Baseline Performance on Standard 80/20 Random Splits",
+      "subtitle": "Random train/test splits show near-perfect metrics across all baseline architectures",
+      "table": {
+        "headers": ["Model Architecture", "Test Accuracy", "Macro F1", "Unstable Recall", "ROC-AUC"],
+        "rows": [
+          ["Logistic Regression (L2)", "100.0%", "1.000", "100.0%", "1.000"],
+          ["Random Forest (100 Trees)", "100.0%", "1.000", "100.0%", "1.000"],
+          ["XGBoost (Gradient Boosted)", "98.89%", "0.987", "96.43%", "0.999"],
+          ["Neural Network (MLP 64x32)", "100.0%", "1.000", "100.0%", "1.000"]
+        ],
+        "column_weights": [1.4, 1.0, 1.0, 1.0, 1.0]
+      },
+      "sources": ["reports/baseline_results.json • Phase 3 Evaluation"]
+    },
+    {
+      "slide_id": "slide-07",
+      "type": "content",
+      "role": "evidence",
+      "variant": "scientific-figure",
+      "slide_intent": "baseline_visual",
+      "title": "Baseline Validation & ROC Characteristics",
+      "subtitle": "5-fold cross-validated ROC curves and confusion matrices on IEEE 39-bus dataset",
+      "figure_layout": "panel-grid",
+      "figures": [
+        {
+          "path": "figures/baseline_roc_curves.png",
+          "label": "A",
+          "title": "Cross-Validated ROC Curves",
+          "caption": "All four baseline architectures achieve near-perfect discrimination (AUC > 0.999)."
+        },
+        {
+          "path": "figures/baseline_confusion_matrices.png",
+          "label": "B",
+          "title": "Test Set Confusion Matrices",
+          "caption": "Zero false negatives on standard 80/20 random split test scenarios."
+        }
+      ],
+      "interpretation": "While standard evaluation indicates near-perfect classification, real power systems never encounter identical operating points during major disturbances.",
+      "sources": ["reports/figures/baseline_roc_curves.png • reports/figures/baseline_confusion_matrices.png"]
+    },
+    {
+      "slide_id": "slide-08",
+      "type": "content",
+      "role": "table",
+      "variant": "table",
+      "role_layout_variant": "dense",
+      "slide_intent": "generalization",
+      "title": "Generalization Collapse on Out-of-Distribution Conditions",
+      "subtitle": "Evaluating models where random splits fail: Unseen Buses, Heavy Loads, and Line Outages",
+      "table": {
+        "headers": ["Held-Out Test Split", "Random Forest", "XGBoost", "Neural Net", "Vulnerability"],
+        "rows": [
+          ["Unseen Buses (29, 39)", "F1: 0.908 (7.1% Err)", "F1: 0.940 (6.1% Err)", "F1: 0.983 (0% Err)", "Local acceleration"],
+          ["Unseen Heavy Load (1.1-1.2)", "F1: 0.814 (15.8% Err)", "F1: 0.639 (31.6% Err)", "F1: 0.978 (2.6% Err)", "Tree step saturation"],
+          ["Unseen Outage (Line 16-17)", "F1: 0.957 (3.7% Err)", "F1: 0.957 (3.7% Err)", "F1: 0.985 (0% Err)", "Transfer impedance"]
+        ],
+        "column_weights": [1.3, 1.0, 1.0, 1.0, 1.2]
+      },
+      "sources": ["research/generalization-study.md • reports/generalization_summary.csv"]
+    },
+    {
+      "slide_id": "slide-09",
+      "type": "content",
+      "role": "evidence",
+      "variant": "scientific-figure",
+      "slide_intent": "generalization_visual",
+      "title": "Quantifying Generalization Gap & Missed Instability Risks",
+      "subtitle": "Significant performance divergence between tree ensembles and neural architectures",
+      "figure_layout": "panel-grid",
+      "figures": [
+        {
+          "path": "figures/generalization_gap.png",
+          "label": "A",
+          "title": "Generalization Gap (Drop in F1)",
+          "caption": "XGBoost drops by 34.8 F1-points when extrapolating to heavy load conditions."
+        },
+        {
+          "path": "figures/generalization_missed_instability.png",
+          "label": "B",
+          "title": "Missed Instability Rate (% Blackouts)",
+          "caption": "XGBoost misses 31.6% of blackouts on heavy loads; MLP maintains 0–2.6% error."
+        }
+      ],
+      "interpretation": "Tree ensembles suffer severe extrapolation failure on heavy loads because orthogonal cuts saturate, while smooth MLP activations extrapolate reliably.",
+      "sources": ["reports/figures/generalization_gap.png • reports/figures/generalization_missed_instability.png"]
+    },
+    {
+      "slide_id": "slide-10",
+      "type": "content",
+      "role": "comparison",
+      "variant": "comparison-2col",
+      "slide_intent": "physics_features",
+      "title": "Equal Area Criterion Impulse Cuts Blackout Risk",
+      "subtitle": "Replacing discrete topological identifiers with physical invariants restores transferability",
+      "left": {
+        "title": "Naive Discrete Bus Features",
+        "bullets": [
+          "Uses discrete bus index or unnormalized graph distance.",
+          "Tree algorithms create brittle splits on specific bus IDs.",
+          "Fails on unseen generator Bus 39 (15.2% blackout error)."
+        ]
+      },
+      "right": {
+        "title": "Physics-Informed EAC Impulse",
+        "bullets": [
+          "Synthesizes invariant: v_sag_impulse = (1 - v_min) * t_clear.",
+          "Direct mathematical proxy for kinetic acceleration area.",
+          "Cuts Random Forest blackout error from 15.2% down to 7.1%."
+        ]
+      },
+      "sources": ["docs/adr/0005-physics-informed-features-vs-black-box.md • Equal Area Criterion (EAC)"]
+    },
+    {
+      "slide_id": "slide-11",
+      "type": "content",
+      "role": "evidence",
+      "variant": "stats",
+      "slide_intent": "cct_stats",
+      "title": "Critical Clearing Time: >33,000x Computational Speedup",
+      "subtitle": "Sub-millisecond ML regression vs 24-second ANDES numerical bisection search",
+      "facts": [
+        {
+          "value": "33,000x",
+          "label": "Inference Speedup",
+          "detail": "0.70 ms XGBoost / 0.04 ms Ridge vs 23.88 s ANDES TDS"
+        },
+        {
+          "value": "25 ms",
+          "label": "CCT Prediction RMSE",
+          "detail": "1.5 cycles accuracy on 60 Hz grid; R² = 0.9636"
+        },
+        {
+          "value": "0.04 ms",
+          "label": "Ultra-Low Latency",
+          "detail": "Enables dynamic margin scoring directly inside SCADA/EMS cycles"
+        }
+      ],
+      "sources": ["reports/cct_results.json • 45 Operating Conditions Benchmark"]
+    },
+    {
+      "slide_id": "slide-12",
+      "type": "content",
+      "role": "evidence",
+      "variant": "scientific-figure",
+      "slide_intent": "cct_visual",
+      "title": "CCT Regressor Parity & Latency Comparison",
+      "subtitle": "Regression parity plot and logarithmic execution time comparison",
+      "figure_layout": "panel-grid",
+      "figures": [
+        {
+          "path": "figures/cct_parity_plot.png",
+          "label": "A",
+          "title": "CCT Regressor Parity Plot",
+          "caption": "Ridge regression (R² = 0.9636) tightly tracks ANDES bisection ground truth."
+        },
+        {
+          "path": "figures/cct_speed_comparison.png",
+          "label": "B",
+          "title": "Execution Latency (Log Scale)",
+          "caption": "ANDES takes 23.88 seconds; ML regressors infer in 0.04 to 0.70 milliseconds."
+        }
+      ],
+      "interpretation": "Ridge regression achieves R²=0.9636 and XGBoost achieves R²=0.9382, matching numerical simulation accuracy at a fraction of the time.",
+      "sources": ["reports/figures/cct_parity_plot.png • reports/figures/cct_speed_comparison.png"]
+    },
+    {
+      "slide_id": "slide-13",
+      "type": "content",
+      "role": "evidence",
+      "variant": "scientific-figure",
+      "slide_intent": "shap_visual",
+      "title": "TreeSHAP Explainability Validates Swing Equation",
+      "subtitle": "Empirical feature attributions mathematically match rotor acceleration dynamics",
+      "figure_layout": "panel-grid",
+      "figures": [
+        {
+          "path": "figures/shap_summary_beeswarm.png",
+          "label": "A",
+          "title": "Global SHAP Feature Attributions",
+          "caption": "Mean and minimum system voltage dominate (|SHAP| = 3.75), governing Pe drop."
+        },
+        {
+          "path": "figures/shap_waterfall_unstable.png",
+          "label": "B",
+          "title": "Local Waterfall: Unstable Scenario",
+          "caption": "Severe voltage sag (-3.48 SHAP) pushes scenario decisively into instability."
+        }
+      ],
+      "interpretation": "Empirical ML attributions strictly align with the Swing Equation (M*d²delta/dt² = Pm - Pe): electrical power delivery during the fault determines stability.",
+      "sources": ["research/shap-explainability-report.md • ADR-0006"]
+    },
+    {
+      "slide_id": "slide-14",
+      "type": "content",
+      "role": "evidence",
+      "variant": "cards-3",
+      "slide_intent": "demo",
+      "title": "Interactive Digital Twin Streamlit Dashboard",
+      "subtitle": "Real-time operator interface bridging simulation, ML prediction, and physical intuition",
+      "cards": [
+        {
+          "title": "Live Operating Controls",
+          "body": "Operator dynamically adjusts load scale (0.8–1.2), fault location, clearing time (0.05–0.35s), and line outages in real time.",
+          "accent": "accent_primary"
+        },
+        {
+          "title": "Dual Output Display",
+          "body": "Instantaneous STABLE/UNSTABLE badge paired with continuous CCT safety margin gauge.",
+          "accent": "accent_secondary"
+        },
+        {
+          "title": "Live SHAP Decomposition",
+          "body": "Interactive waterfall plot explaining exact feature attributions driving each individual scenario prediction.",
+          "accent": "accent_primary"
+        }
+      ],
+      "sources": ["app/streamlit_app.py • Run via: python -m streamlit run app/streamlit_app.py"]
+    },
+    {
+      "slide_id": "slide-15",
+      "type": "content",
+      "role": "table",
+      "variant": "table",
+      "role_layout_variant": "dense",
+      "slide_intent": "adrs",
+      "title": "7 Architecture Decision Records (ADRs)",
+      "subtitle": "Disciplined software and research engineering documentation",
+      "table": {
+        "headers": ["ADRs", "Focus Area", "Architecture Decision"],
+        "rows": [
+          ["ADR-0001/2", "Engine & Labels", "ANDES DAE solver + COI 180° rotor criterion"],
+          ["ADR-0003/4", "Splits & Models", "Held-out condition splits + continuous MLP"],
+          ["ADR-0005/6", "Physics & XAI", "EAC acceleration impulse + TreeSHAP XAI"],
+          ["ADR-0007", "CCT Benchmark", "ANDES bisection ground truth for ML speedup"]
+        ],
+        "column_weights": [1.1, 1.4, 2.3]
+      },
+      "sources": ["docs/adr/README.md • ADR-0001 through ADR-0007"]
+    },
+    {
+      "slide_id": "slide-16",
+      "type": "content",
+      "role": "comparison",
+      "variant": "comparison-2col",
+      "slide_intent": "conclusion",
+      "title": "Minor Project Conclusion & 8th Semester Roadmap",
+      "subtitle": "Minor project objectives completed; transition into advanced representation learning",
+      "left": {
+        "title": "Minor Deliverables (Completed)",
+        "bullets": [
+          "Working 450-scenario ANDES pipeline with COI 180° rule.",
+          "Domain generalization tests + 33,000x CCT regression.",
+          "TreeSHAP explainability + interactive Streamlit demo."
+        ]
+      },
+      "right": {
+        "title": "Major Roadmap (8th Semester)",
+        "bullets": [
+          "Spatio-temporal GNN on admittance matrix Y_bus.",
+          "Self-supervised JEPA on multi-channel PMU time-series.",
+          "Hardware-in-the-loop (HIL) real-time co-simulation."
+        ]
+      },
+      "sources": ["roadmap.md • National Institute of Technology (NIT) Raipur"]
+    }
+  ]
+}
