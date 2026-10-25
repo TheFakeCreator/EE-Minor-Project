@@ -1,0 +1,22 @@
+[
+    {
+        "feature": "v_mean_system",
+        "mean_abs_shap": 3.7525644302368164
+    },
+    {
+        "feature": "v_min_system",
+        "mean_abs_shap": 0.5192081332206726
+    },
+    {
+        "feature": "fault_bus_16",
+        "mean_abs_shap": 0.17283940315246582
+    },
+    {
+        "feature": "fault_bus_39",
+        "mean_abs_shap": 0.16616131365299225
+    },
+    {
+        "feature": "v_sag_impulse",
+        "mean_abs_shap": 0.08731044828891754
+    }
+]
