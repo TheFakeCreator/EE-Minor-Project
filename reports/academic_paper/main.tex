@@ -13,6 +13,7 @@
 \usepackage{booktabs}
 \usepackage{multirow}
 \usepackage{microtype}
+\usepackage{balance}
 
 \begin{document}
 
@@ -23,7 +24,7 @@
         Karandeep~Taram,
         and~Veena~Gupta%
 \thanks{The authors are with the Department of Electrical Engineering, National Institute of Technology (NIT), Raipur, Chhattisgarh 492010, India (e-mail: sanskar.gupta@nitrr.ac.in).}%
-\thanks{This research was completed as part of the 7th-Semester B.Tech Electrical Engineering Minor Project (Academic Year 2026--2027). The complete open-source codebase is publicly available on GitHub: \url{https://github.com/TheFakeCreator/EE-Minor-Project}.}}
+\thanks{This research was completed as part of the 7th-Semester B.Tech Electrical Engineering Minor Project (Academic Year 2026--2027). The complete open-source codebase is publicly available on GitHub: \protect\url{https://github.com/TheFakeCreator/EE-Minor-Project}.}}
 
 \markboth{IEEE Transactions on Power Systems,~Vol.~XX, No.~X, October~2026}%
 {Gupta \MakeLowercase{\textit{et al.}}: Physics-Guided Machine Learning for Transient Stability Assessment}
@@ -121,6 +122,7 @@ Models were first evaluated using standard 80/20 random stratified splits. Table
 \centering
 \caption{In-Distribution Baseline Classification Performance}
 \label{tab:baselines}
+\setlength{\tabcolsep}{3.5pt}
 \begin{tabular}{lccccc}
 \toprule
 \textbf{Model} & \textbf{Accuracy} & \textbf{Recall} & \textbf{Precision} & \textbf{Macro F1} & \textbf{AUC} \\
@@ -135,6 +137,7 @@ Neural Net (MLP) & 100.0\% & 100.0\% & 100.0\% & 1.000 & 1.000 \\
 
 While random split results indicate near-perfect metrics, this performance is deceptive because test samples share identical topologies and load levels with the training set.
 
+\balance
 \section{Out-of-Distribution Generalization Experiments}
 To test true operational transferability, we evaluated models across three strictly held-out out-of-distribution partitions:
 \begin{enumerate}
@@ -143,34 +146,35 @@ To test true operational transferability, we evaluated models across three stric
     \item \textbf{Split C (Held-Out N-1 Outage):} Train on $N-0$ and Line 2-3; Test on Line 16-17 outage.
 \end{enumerate}
 
-\begin{table}[htbp]
+\begin{table*}[t]
 \centering
-\caption{Out-of-Distribution Domain Generalization Matrix}
+\caption{Out-of-Distribution Domain Generalization Matrix Across Physical Stress Tests}
 \label{tab:ood}
-\begin{tabular}{llccc}
+\setlength{\tabcolsep}{8pt}
+\begin{tabular}{llccccc}
 \toprule
-\textbf{Domain Shift} & \textbf{Model} & \textbf{Accuracy} & \textbf{Macro F1} & \textbf{Missed Inst.} \\
+\textbf{Domain Shift Scenario} & \textbf{Model Architecture} & \textbf{Accuracy} & \textbf{Balanced Acc} & \textbf{Unstable Recall} & \textbf{Macro F1} & \textbf{Missed Blackouts} \\
 \midrule
-\multirow{4}{*}{\textbf{Split A (Buses 29, 39)}} 
- & Logistic Reg. & 97.78\% & 0.978 & 4 (4.0\%) \\
- & Random Forest & 96.11\% & 0.961 & \textbf{7 (7.1\%)} \\
- & XGBoost & 100.0\% & 1.000 & 0 (0.0\%) \\
- & Neural Net (MLP)& 98.33\% & 0.983 & 3 (3.0\%) \\
+\multirow{4}{*}{\textbf{Split A: Held-Out Buses (29, 39)}} 
+ & Logistic Regression & 97.78\% & 0.980 & 95.96\% & 0.978 & 4 (4.0\%) \\
+ & Random Forest & 96.11\% & 0.965 & 92.93\% & 0.961 & \textbf{7 (7.1\%)} \\
+ & XGBoost & \textbf{100.0\%} & \textbf{1.000} & \textbf{100.0\%} & \textbf{1.000} & \textbf{0 (0.0\%)} \\
+ & Neural Network (MLP) & 98.33\% & 0.985 & 96.97\% & 0.983 & 3 (3.0\%) \\
 \midrule
-\multirow{4}{*}{\textbf{Split B (Loads 1.1x, 1.2x)}} 
- & Logistic Reg. & 98.33\% & 0.981 & 3 (4.8\%) \\
- & Random Forest & 98.33\% & 0.981 & 3 (4.8\%) \\
- & \textbf{XGBoost (Collapse)} & \textbf{63.89\%} & \textbf{0.638} & \textbf{0 (65 FA!)} \\
- & Neural Net (MLP)& \textbf{97.78\%} & \textbf{0.975} & 4 (6.3\%) \\
+\multirow{4}{*}{\textbf{Split B: Held-Out Loads (1.1x, 1.2x)}} 
+ & Logistic Regression & 98.33\% & 0.976 & 95.24\% & 0.981 & 3 (4.8\%) \\
+ & Random Forest & 98.33\% & 0.976 & 95.24\% & 0.981 & 3 (4.8\%) \\
+ & \textbf{XGBoost (Step Collapse)} & \textbf{63.89\%} & \textbf{0.722} & \textbf{100.0\%} & \textbf{0.638} & \textbf{0 (65 False Alarms!)} \\
+ & Neural Network (MLP) & \textbf{97.78\%} & \textbf{0.968} & \textbf{93.65\%} & \textbf{0.975} & 4 (6.3\%) \\
 \midrule
-\multirow{4}{*}{\textbf{Split C (Line 16-17)}} 
- & Logistic Reg. & 96.00\% & 0.956 & 6 (10.9\%) \\
- & Random Forest & 100.0\% & 1.000 & 0 (0.0\%) \\
- & XGBoost & 97.33\% & 0.957 & 4 (7.3\%) \\
- & Neural Net (MLP)& 98.67\% & 0.985 & 0 (0.0\%) \\
+\multirow{4}{*}{\textbf{Split C: Held-Out Outage (Line 16-17)}} 
+ & Logistic Regression & 96.00\% & 0.945 & 89.09\% & 0.956 & 6 (10.9\%) \\
+ & Random Forest & \textbf{100.0\%} & \textbf{1.000} & \textbf{100.0\%} & \textbf{1.000} & \textbf{0 (0.0\%)} \\
+ & XGBoost & 97.33\% & 0.964 & 92.73\% & 0.957 & 4 (7.3\%) \\
+ & Neural Network (MLP) & \textbf{98.67\%} & \textbf{0.982} & \textbf{96.36\%} & \textbf{0.985} & \textbf{0 (0.0\%)} \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
 
 \subsection{Physical Autopsy of Failure Modes}
 Table~\ref{tab:ood} exposes significant failure modes:
@@ -187,6 +191,7 @@ To establish ground-truth CCT boundaries, an automated bisection search was impl
 \centering
 \caption{Critical Clearing Time (CCT) Regression \& Latency Comparison}
 \label{tab:cct}
+\setlength{\tabcolsep}{3.5pt}
 \begin{tabular}{lcccc}
 \toprule
 \textbf{Model} & $R^2$ & \textbf{MAE (s)} & \textbf{Latency (ms)} & \textbf{Speedup} \\
@@ -203,16 +208,16 @@ As documented in Table~\ref{tab:cct}, Ridge Regression achieves $R^2 = 0.9636$ w
 \section{Explainable AI via TreeSHAP}
 Game-theoretic Shapley additive explanations (TreeSHAP) \cite{lundberg2017unified} extracted the following global feature hierarchy:
 \begin{enumerate}
-    \item `v_mean_system` (Mean $|SHAP| = 3.753$): Average post-fault voltage sag.
-    \item `v_min_system` (Mean $|SHAP| = 0.519$): Maximum voltage depression.
-    \item `fault_bus_16` (Mean $|SHAP| = 0.173$): Central 5-way switching hub.
-    \item `fault_bus_39` (Mean $|SHAP| = 0.166$): Generator 10 terminal fault.
-    \item `v_sag_impulse` (Mean $|SHAP| = 0.087$): EAC kinetic impulse proxy.
+    \item \texttt{v\_mean\_system} (Mean $|SHAP| = 3.753$): Average post-fault voltage sag.
+    \item \texttt{v\_min\_system} (Mean $|SHAP| = 0.519$): Maximum voltage depression.
+    \item \texttt{fault\_bus\_16} (Mean $|SHAP| = 0.173$): Central 5-way switching hub.
+    \item \texttt{fault\_bus\_39} (Mean $|SHAP| = 0.166$): Generator 10 terminal fault.
+    \item \texttt{v\_sag\_impulse} (Mean $|SHAP| = 0.087$): EAC kinetic impulse proxy.
 \end{enumerate}
 This hierarchy directly reflects the Swing Equation: voltage suppression chokes $P_e \to 0$, creating accelerating torque $(P_m - P_e > 0)$ proportional to $(1 - v_{\min}) \times t_{\text{clear}}$.
 
 \section{Digital Twin Implementation}
-To operationalize these models, an interactive SCADA Digital Twin was deployed in Streamlit (`app/streamlit_app.py`) featuring:
+To operationalize these models, an interactive SCADA Digital Twin was deployed in Streamlit (\texttt{app/streamlit\_app.py}) featuring:
 \begin{itemize}
     \item \textbf{Live SCADA Topology (SLD):} 39-bus interactive grid showing dynamic fault shockwaves, line outages (Line 16-17 trip), and generator synchronism states.
     \item \textbf{Transient Rotor Angle Swings $\delta(t)$:} Time-domain swing curves showing damped oscillations vs $180^\circ$ pole-slip divergence.
