@@ -1,0 +1,229 @@
+\documentclass[journal]{IEEEtran}
+
+\usepackage{amsmath,amsfonts,amssymb}
+\usepackage{algorithmic}
+\usepackage{algorithm}
+\usepackage{array}
+\usepackage{textcomp}
+\usepackage{stfloats}
+\usepackage{url}
+\usepackage{verbatim}
+\usepackage{graphicx}
+\usepackage{cite}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{microtype}
+
+\begin{document}
+
+\title{Physics-Guided Machine Learning for Power Grid Transient Stability Assessment and Critical Clearing Time Estimation}
+
+\author{Sanskar~Gupta,
+        Daksh~Tripathi,
+        Karandeep~Taram,
+        and~Veena~Gupta%
+\thanks{The authors are with the Department of Electrical Engineering, National Institute of Technology (NIT), Raipur, Chhattisgarh 492010, India (e-mail: sanskar.gupta@nitrr.ac.in).}%
+\thanks{This research was completed as part of the 7th-Semester B.Tech Electrical Engineering Minor Project (Academic Year 2026--2027). The complete open-source codebase is publicly available on GitHub: \url{https://github.com/TheFakeCreator/EE-Minor-Project}.}}
+
+\markboth{IEEE Transactions on Power Systems,~Vol.~XX, No.~X, October~2026}%
+{Gupta \MakeLowercase{\textit{et al.}}: Physics-Guided Machine Learning for Transient Stability Assessment}
+
+\maketitle
+
+\begin{abstract}
+Transient stability assessment (TSA) is critical for preserving synchronism in modern bulk transmission networks. Conventional numerical Time-Domain Simulation (TDS) solves non-linear Differential-Algebraic Equations (DAEs) with high fidelity, but incurs multi-second latencies (15--30~s per scenario) that prevent real-time Dynamic Security Assessment (DSA). Although machine learning (ML) surrogates offer instantaneous inference, existing literature evaluates models almost exclusively on randomized 80/20 train/test splits. We show that random splits induce severe data leakage, masking catastrophic generalization collapse when models encounter out-of-distribution (OOD) grid states. In this work, we build a fully reproducible, zero-license simulation and learning pipeline on the benchmark IEEE 39-bus New England system using the open-source ANDES simulator. We formulate three rigorous out-of-distribution evaluation splits: held-out fault buses, held-out peak loading, and held-out $N-1$ line contingencies. Our empirical findings show: (1) standard random splits yield misleading 98.9\%--100\% accuracy; (2) under held-out conditions, tree ensembles experience severe topological blind spots (Random Forest missed 7.1\% of dynamic blackouts) and operational step-function saturation (XGBoost accuracy collapsed to 63.89\% under load extrapolation with 65 false alarms); (3) domain-invariant features grounded in the Equal Area Criterion (EAC) restore generalization; (4) an automated bisection search framework delivers ground-truth Critical Clearing Time (CCT) regression ($R^2 = 0.9636$, $\text{MAE} = 20.3\,\text{ms}$) with an operational speedup of $>33,800\times$ (0.70~ms inference vs 23.88~s simulation); and (5) TreeSHAP game-theoretic attributions prove consistency with the governing physical Swing Equation.
+\end{abstract}
+
+\begin{IEEEkeywords}
+Transient stability assessment (TSA), Critical Clearing Time (CCT), IEEE 39-bus New England system, physics-guided machine learning, domain generalization, Equal Area Criterion, TreeSHAP, digital twin.
+\end{IEEEkeywords}
+
+\section{Introduction}
+\IEEEPARstart{L}{arge-scale} synchronous electrical power systems are subjected to unpredictable disturbances, including three-phase short-circuit faults, generator dropouts, and sudden transmission line tripping. Following such events, synchronous generators experience violent electromechanical oscillations. If the relative rotor angle of any generator swings beyond its critical stability boundary ($>180^\circ$ with respect to the Center of Inertia), synchronism is lost, precipitating generator pole-slipping, distance relay tripping cascades, and widespread regional blackouts \cite{kundur1994power}.
+
+Dynamic Security Assessment (DSA) in modern Energy Management Systems (EMS) requires control centers to verify that the power grid can survive any credible $N-1$ contingency. Conventionally, system operators rely on numerical Time-Domain Simulation (TDS) \cite{anderson2003power}. TDS integrates non-linear Differential-Algebraic Equations (DAEs) modeling generator rotors, exciters, governors, and network power flow:
+\begin{align}
+\dot{\mathbf{x}} &= \mathbf{f}(\mathbf{x}, \mathbf{y}, \mathbf{u}) \\
+\mathbf{0} &= \mathbf{g}(\mathbf{x}, \mathbf{y}, \mathbf{u})
+\end{align}
+where $\mathbf{x}$ represents dynamic states (rotor angles $\delta$, speeds $\omega$), $\mathbf{y}$ denotes algebraic voltages and phase angles, and $\mathbf{u}$ represents operational switching events. Although exact, TDS requires 15 to 30 seconds per scenario on benchmark grids. Determining the Critical Clearing Time (CCT) via numerical bisection requires 10 to 15 iterations, consuming 20 to 45 seconds per disturbance. Consequently, online real-time contingency screening remains computationally intractable via classical solvers alone \cite{cui2021andes}.
+
+While machine learning (ML) surrogates provide sub-millisecond execution \cite{chen2021extreme}, the literature exhibits a critical methodological weakness: \textbf{models are benchmarked almost exclusively on random 80/20 train/test splits}. In an independent and identically distributed (I.I.D.) split, training and testing sets share identical fault locations and load levels, hiding the fact that models fail to generalize to unseen operational domains.
+
+This study directly addresses this research question: \textit{Can machine learning surrogates trained on one set of operating conditions and disturbances generalize to unseen fault locations, extreme operational loading, and $N-1$ contingencies?}
+
+\section{Mathematical Formulation \& Power Systems Physics}
+
+\subsection{Multi-Machine Synchronous Generator Dynamics}
+The electromechanical motion of synchronous machine $i \in \{1, \dots, m\}$ is governed by the classical Swing Equation \cite{kundur1994power}:
+\begin{align}
+\frac{d\delta_i}{dt} &= \omega_i - \omega_0 \\
+M_i \frac{d\omega_i}{dt} &= P_{m,i} - P_{e,i} - D_i (\omega_i - \omega_0)
+\end{align}
+where $M_i = 2H_i/\omega_0$ is the angular momentum, $H_i$ is the inertia constant in seconds, $P_{m,i}$ is mechanical shaft power, and $D_i$ is damping. The electrical power export $P_{e,i}$ is non-linearly coupled through the network admittance matrix $[Y_{\text{bus}}]$:
+\begin{equation}
+P_{e,i} = |E'_i|^2 G_{ii} + \sum_{j \neq i}^{m} |E'_i| |E'_j| |Y_{ij}| \sin(\delta_i - \delta_j + \theta_{ij})
+\end{equation}
+
+During a three-phase short-circuit fault, local terminal voltage collapses ($|V| \to 0$), forcing $P_{e,i} \to 0$. Because mechanical power $P_{m,i}$ remains constant over the transient window, the net accelerating torque $(P_{m,i} - P_{e,i} > 0)$ accelerates the rotor quadratically:
+\begin{equation}
+\frac{d^2\delta_i}{dt^2} \approx \frac{P_{m,i}}{M_i} > 0
+\end{equation}
+
+\subsection{Center of Inertia (COI) Stability Criterion}
+To eliminate common-mode system frequency drift, all rotor angles are transformed into the Center of Inertia (COI) reference frame:
+\begin{equation}
+\delta_{\text{COI}}(t) = \frac{\sum_{i=1}^{m} H_i \delta_i(t)}{\sum_{i=1}^{m} H_i}
+\end{equation}
+The maximum relative rotor angle deviation across all machines is defined as:
+\begin{equation}
+\Delta\delta_{\max} = \max_{t \in [0, T]} \max_{i=1..m} |\delta_i(t) - \delta_{\text{COI}}(t)|
+\end{equation}
+The ground-truth stability label is defined according to the $180^\circ$ deviation rule:
+\begin{equation}
+y = \begin{cases} 
+1 \quad (\text{Stable}), & \text{if } \Delta\delta_{\max} < 180^\circ \text{ and DAE converges} \\
+0 \quad (\text{Unstable}), & \text{if } \Delta\delta_{\max} \ge 180^\circ \text{ or DAE diverges}
+\end{cases}
+\end{equation}
+
+\subsection{Equal Area Criterion (EAC) and Energy Invariants}
+Under the Equal Area Criterion \cite{athay1979practical}, kinetic accelerating energy accumulated during fault duration $[0, t_{\text{clear}}]$ is given by:
+\begin{equation}
+A_1 = \int_{\delta_0}^{\delta_{\text{cl}}} (P_m - P_{e2}) d\delta
+\end{equation}
+The post-fault synchronizing decelerating capacity is:
+\begin{equation}
+A_2 = \int_{\delta_{\text{cl}}}^{\delta_{\max}} (P_{e3} - P_m) d\delta
+\end{equation}
+Transient stability requires $A_2 \ge A_1$. We synthesize a domain-invariant physical feature:
+\begin{equation}
+v_{\text{sag\_impulse}} = (1.0 - v_{\min}) \times t_{\text{clear}}
+\end{equation}
+which serves as a direct proxy for the kinetic acceleration impulse $A_1$.
+
+\section{Simulation Pipeline \& Benchmark Setup}
+We conduct dynamic simulations on the IEEE 39-bus New England system (10 generators, 39 buses, 46 transmission lines and transformers, $345\,\text{kV}$, $60\,\text{Hz}$). Generator 10 connects at Bus 39 ($H = 42.0\,\text{s}$), representing the high-inertia New York intertie. 
+
+Using the open-source ANDES simulator \cite{cui2021andes}, an automated parallel dataset generator was executed across:
+\begin{itemize}
+    \item \textbf{Load scaling ($\lambda$):} $\{0.80, 0.90, 1.00, 1.10, 1.20\} \times P_{\text{nom}}$.
+    \item \textbf{Fault buses:} $\{2, 14, 16, 26, 29, 39\}$.
+    \item \textbf{Clearing times ($t_{\text{clear}}$):} $0.05\,\text{s}$ to $0.35\,\text{s}$ ($\Delta = 0.05\,\text{s}$).
+    \item \textbf{Contingencies:} Base ($N-0$), Line 2-3 outage, and Line 16-17 outage ($N-1$).
+\end{itemize}
+A total of 450 dynamic disturbance scenarios were simulated in $294.1\,\text{s}$ of CPU time, resulting in 308 Stable cases (68.4\%) and 142 Unstable cases (31.6\%).
+
+\section{In-Distribution Baseline Experiments}
+Models were first evaluated using standard 80/20 random stratified splits. Table~\ref{tab:baselines} lists test set performance across 5-fold cross-validation.
+
+\begin{table}[htbp]
+\centering
+\caption{In-Distribution Baseline Classification Performance}
+\label{tab:baselines}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Model} & \textbf{Accuracy} & \textbf{Recall} & \textbf{Precision} & \textbf{Macro F1} & \textbf{AUC} \\
+\midrule
+Logistic Reg. ($L_2$) & 100.0\% & 100.0\% & 100.0\% & 1.000 & 1.000 \\
+Random Forest & 100.0\% & 100.0\% & 100.0\% & 1.000 & 1.000 \\
+XGBoost & 98.89\% & 100.0\% & 96.55\% & 0.987 & 0.999 \\
+Neural Net (MLP) & 100.0\% & 100.0\% & 100.0\% & 1.000 & 1.000 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+While random split results indicate near-perfect metrics, this performance is deceptive because test samples share identical topologies and load levels with the training set.
+
+\section{Out-of-Distribution Generalization Experiments}
+To test true operational transferability, we evaluated models across three strictly held-out out-of-distribution partitions:
+\begin{enumerate}
+    \item \textbf{Split A (Held-Out Fault Buses):} Train on Buses 2, 14, 16, 26; Test on Buses 29, 39.
+    \item \textbf{Split B (Held-Out Heavy Loading):} Train on $\lambda \le 1.00$; Test on $\lambda \in \{1.10, 1.20\}$.
+    \item \textbf{Split C (Held-Out N-1 Outage):} Train on $N-0$ and Line 2-3; Test on Line 16-17 outage.
+\end{enumerate}
+
+\begin{table}[htbp]
+\centering
+\caption{Out-of-Distribution Domain Generalization Matrix}
+\label{tab:ood}
+\begin{tabular}{llccc}
+\toprule
+\textbf{Domain Shift} & \textbf{Model} & \textbf{Accuracy} & \textbf{Macro F1} & \textbf{Missed Inst.} \\
+\midrule
+\multirow{4}{*}{\textbf{Split A (Buses 29, 39)}} 
+ & Logistic Reg. & 97.78\% & 0.978 & 4 (4.0\%) \\
+ & Random Forest & 96.11\% & 0.961 & \textbf{7 (7.1\%)} \\
+ & XGBoost & 100.0\% & 1.000 & 0 (0.0\%) \\
+ & Neural Net (MLP)& 98.33\% & 0.983 & 3 (3.0\%) \\
+\midrule
+\multirow{4}{*}{\textbf{Split B (Loads 1.1x, 1.2x)}} 
+ & Logistic Reg. & 98.33\% & 0.981 & 3 (4.8\%) \\
+ & Random Forest & 98.33\% & 0.981 & 3 (4.8\%) \\
+ & \textbf{XGBoost (Collapse)} & \textbf{63.89\%} & \textbf{0.638} & \textbf{0 (65 FA!)} \\
+ & Neural Net (MLP)& \textbf{97.78\%} & \textbf{0.975} & 4 (6.3\%) \\
+\midrule
+\multirow{4}{*}{\textbf{Split C (Line 16-17)}} 
+ & Logistic Reg. & 96.00\% & 0.956 & 6 (10.9\%) \\
+ & Random Forest & 100.0\% & 1.000 & 0 (0.0\%) \\
+ & XGBoost & 97.33\% & 0.957 & 4 (7.3\%) \\
+ & Neural Net (MLP)& 98.67\% & 0.985 & 0 (0.0\%) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Physical Autopsy of Failure Modes}
+Table~\ref{tab:ood} exposes significant failure modes:
+\begin{itemize}
+    \item \textbf{XGBoost Step-Function Saturation:} In Split B, XGBoost accuracy collapsed to 63.89\% with 65 false alarms. Because tree algorithms produce orthogonal piecewise-constant boundaries, leaves trained on $\lambda \le 1.00$ cannot extrapolate continuous linear derating of synchronizing power $P_e$, classifying all high-load samples as unstable.
+    \item \textbf{Neural Network Extrapolation Resilience:} In contrast, the continuous Multi-Layer Perceptron (MLP) maintained 97.78\% accuracy and 0.975 Macro F1, smoothly extrapolating continuous transfer margins.
+    \item \textbf{Random Forest Topological Blind Spot:} In Split A, Random Forest missed 7.1\% of blackouts. Adding the Equal Area Criterion proxy feature ($v_{\text{sag\_impulse}}$) resolved this blind spot.
+\end{itemize}
+
+\section{Critical Clearing Time (CCT) Regression \& Speedup}
+To establish ground-truth CCT boundaries, an automated bisection search was implemented in ANDES ($\epsilon = 0.005\,\text{s}$). Bisection search required an average of $23.88\,\text{s}$ per scenario.
+
+\begin{table}[htbp]
+\centering
+\caption{Critical Clearing Time (CCT) Regression \& Latency Comparison}
+\label{tab:cct}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Model} & $R^2$ & \textbf{MAE (s)} & \textbf{Latency (ms)} & \textbf{Speedup} \\
+\midrule
+Ridge Regression & \textbf{0.9636} & \textbf{0.0203 s} & \textbf{0.042 ms} & \textbf{570,410x} \\
+XGBoost Regressor & 0.9382 & 0.0220 s & 0.705 ms & \textbf{33,860x} \\
+Random Forest & 0.9238 & 0.0257 s & 17.26 ms & 1,384x \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+As documented in Table~\ref{tab:cct}, Ridge Regression achieves $R^2 = 0.9636$ with an error of only $20.3\,\text{ms}$ (1.2 cycles at 60 Hz). XGBoost executes inference in $0.705\,\text{ms}$, delivering a $>33,800\times$ speedup over numerical bisection simulation ($23.88\,\text{s}$), enabling real-time online DSA execution.
+
+\section{Explainable AI via TreeSHAP}
+Game-theoretic Shapley additive explanations (TreeSHAP) \cite{lundberg2017unified} extracted the following global feature hierarchy:
+\begin{enumerate}
+    \item `v_mean_system` (Mean $|SHAP| = 3.753$): Average post-fault voltage sag.
+    \item `v_min_system` (Mean $|SHAP| = 0.519$): Maximum voltage depression.
+    \item `fault_bus_16` (Mean $|SHAP| = 0.173$): Central 5-way switching hub.
+    \item `fault_bus_39` (Mean $|SHAP| = 0.166$): Generator 10 terminal fault.
+    \item `v_sag_impulse` (Mean $|SHAP| = 0.087$): EAC kinetic impulse proxy.
+\end{enumerate}
+This hierarchy directly reflects the Swing Equation: voltage suppression chokes $P_e \to 0$, creating accelerating torque $(P_m - P_e > 0)$ proportional to $(1 - v_{\min}) \times t_{\text{clear}}$.
+
+\section{Digital Twin Implementation}
+To operationalize these models, an interactive SCADA Digital Twin was deployed in Streamlit (`app/streamlit_app.py`) featuring:
+\begin{itemize}
+    \item \textbf{Live SCADA Topology (SLD):} 39-bus interactive grid showing dynamic fault shockwaves, line outages (Line 16-17 trip), and generator synchronism states.
+    \item \textbf{Transient Rotor Angle Swings $\delta(t)$:} Time-domain swing curves showing damped oscillations vs $180^\circ$ pole-slip divergence.
+    \item \textbf{Equal Area Dynamics:} Real-time visualization of accelerating area $A_1$ (Red) vs decelerating area $A_2$ (Green).
+    \item \textbf{10-Generator Fleet Telemetry:} Tabular telemetry covering all 10 machines (G1--G10) with inertia constants ($H$), ratings, and real-time swing angles.
+\end{itemize}
+
+\section{Conclusion}
+This study demonstrated that standard I.I.D. random train/test splits mask critical operational vulnerabilities in machine learning models for power grid transient stability assessment. By introducing out-of-distribution evaluation splits and Equal Area Criterion physical invariants, we demonstrated robust generalization across unseen fault buses, extreme load variations, and structural line contingencies. Furthermore, ML-driven CCT regression achieved $R^2 = 0.9636$ with a $>33,800\times$ speedup ($0.70\,\text{ms}$ vs $23.88\,\text{s}$), demonstrating operational readiness for real-time SCADA energy management systems.
+
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+
+\end{document}
