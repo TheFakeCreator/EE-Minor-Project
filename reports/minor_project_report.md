@@ -98,10 +98,14 @@ $$y = \begin{cases}
 ## 4. Simulation Pipeline & IEEE 39-Bus Setup
 
 ### 4.1 Benchmark System
-We benchmark on the **IEEE 39-Bus New England Test System** (`ieee39/ieee39_full.xlsx`):
+We benchmark on the standard **IEEE 39-Bus New England Test System** (`ieee39/ieee39_full.xlsx`):
 - 10 Synchronous Generators (Buses 30–39). Bus 39 connects Gen 10 ($H = 42.0\,\text{s}$).
-- 39 Buses, 46 AC Transmission lines and transformers.
+- 39 Buses, 46 AC Transmission lines and step-up transformers.
 - 19 PQ Loads with nominal active load $\approx 6,150\,\text{MW}$.
+- Base Voltage: $345\,\text{kV}$, Base Power: $100\,\text{MVA}$, Nominal Frequency: $60\,\text{Hz}$.
+
+![IEEE 39-Bus Single-Line Diagram](figures/ieee39_single_line_diagram.png)
+*Figure 4.1: Single-Line Diagram (SLD) of the IEEE 39-Bus New England Test System generated for this study. The diagram illustrates all 10 synchronous generator buses (G1–G10, Buses 30–39), standard 345 kV transmission lines, central 5-way switching hub Bus 16, tested in-distribution fault locations (Buses 2, 14, 16, 26), held-out unseen fault buses (Buses 29 and 39), and the held-out N-1 transmission line outage corridor (Line 16-17, dashed red).*
 
 ### 4.2 Multi-Processing Dataset Generation
 Using the open-source **ANDES** simulator in Python, we constructed an automated parallel scenario generator (`src/simulation/generate_dataset.py`):

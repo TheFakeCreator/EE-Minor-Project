@@ -1,6 +1,18 @@
 {
   "version": 1,
   "skills": {
+    "academic-paper": {
+      "source": "omnitric/agent-skills",
+      "sourceType": "github",
+      "skillPath": "academic-paper/SKILL.md",
+      "computedHash": "9fa433351f75bdd01922105f33d172fe54d7c7b79cca4de708f5c1351e643006"
+    },
+    "ai-research-writing-skill": {
+      "source": "jin-s13/ai-research-writing-skill",
+      "sourceType": "github",
+      "skillPath": "SKILL.md",
+      "computedHash": "dced6e7d293c08046cdaed16fe764c6251c44ec2cef4ac7513f90495359633ee"
+    },
     "design-taste-frontend": {
       "source": "Leonxlnx/taste-skill",
       "sourceType": "github",
